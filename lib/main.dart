@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'modules/wheel_game/view/wheel_game_view.dart';
+import 'modules/routes/app_pages.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,9 +21,8 @@ class MyApp extends StatelessWidget {
           context,
         ).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
       ),
-      // home: Lotti(),
-      home: WheelGameView(),
-      // home: NameEntryView(),
+      initialRoute: AppPages.INITIAL,
+      getPages: AppPages.routes,
     );
   }
 }

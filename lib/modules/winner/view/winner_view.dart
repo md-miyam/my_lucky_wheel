@@ -3,39 +3,111 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import '../../../utils/app_color.dart';
+import '../controllers/winner_controller.dart';
 
 class WinnerView extends StatelessWidget {
   final String winnerName;
 
-  const WinnerView({super.key, required this.winnerName});
+  WinnerView({super.key, required this.winnerName}) {
+    // Initialize controller with winner name immediately
+    try {
+      Get.find<WinnerController>().initialize(winnerName);
+    } catch (e) {
+      // Controller not found, will be initialized by binding
+      debugPrint('WinnerController will be initialized by binding');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Ensure controller is initialized
+    final controller = Get.find<WinnerController>();
+    if (!controller.isInitialized) {
+      controller.initialize(winnerName);
+    }
+
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.bottomLeft,
-            end: Alignment.topRight,
-            colors: [
-              AppColor.darkBackground1,
-              AppColor.darkBackground2,
-              AppColor.darkBackground3,
-            ],
+      appBar: const WinnerAppBar(),
+      body: const WinnerBody(),
+    );
+  }
+}
+
+class WinnerAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const WinnerAppBar({super.key});
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      backgroundColor: AppColor.darkBackground1,
+      leading: const WinnerBackButton(),
+    );
+  }
+}
+
+class WinnerBackButton extends StatelessWidget {
+  const WinnerBackButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: () => Get.back(),
+      icon: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppColor.pureWhite.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColor.pureWhite.withValues(alpha: 0.2),
+            width: 1,
           ),
         ),
-        child: Stack(
-          children: [
-            _buildAnimatedBackground(),
-            Positioned.fill(child: CustomPaint(painter: _StarsPainter())),
-            _buildContent(),
-          ],
+        child: const Icon(
+          Icons.arrow_back_ios_new,
+          color: AppColor.pureWhite,
+          size: 20,
         ),
       ),
     );
   }
+}
 
-  Widget _buildAnimatedBackground() {
+class WinnerBody extends StatelessWidget {
+  const WinnerBody({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomLeft,
+          end: Alignment.topRight,
+          colors: [
+            AppColor.darkBackground1,
+            AppColor.darkBackground2,
+            AppColor.darkBackground3,
+          ],
+        ),
+      ),
+      child: Stack(
+        children: [
+          const WinnerAnimatedBackground(),
+          Positioned.fill(child: CustomPaint(painter: WinnerStarsPainter())),
+          const WinnerContent(),
+        ],
+      ),
+    );
+  }
+}
+
+class WinnerAnimatedBackground extends StatelessWidget {
+  const WinnerAnimatedBackground({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     return Positioned.fill(
       child: Opacity(
         opacity: 0.3,
@@ -47,7 +119,7 @@ class WinnerView extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   colors: [
-                    AppColor.primaryPink.withOpacity(0.1),
+                    AppColor.primaryPink.withValues(alpha: 0.1),
                     Colors.transparent,
                   ],
                 ),
@@ -58,63 +130,38 @@ class WinnerView extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildContent() {
+class WinnerContent extends StatelessWidget {
+  const WinnerContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     return SafeArea(
-      child: Column(
-        children: [
-          _buildBackButton(),
-          Expanded(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildTitle(),
-                    const SizedBox(height: 40),
-                    _buildWinnerCard(),
-                    const SizedBox(height: 60),
-                    _buildPlayAgainButton(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBackButton() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 10.0),
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: IconButton(
-          onPressed: () => Get.back(),
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColor.pureWhite.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColor.pureWhite.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: const Icon(
-              Icons.arrow_back_ios_new,
-              color: AppColor.pureWhite,
-              size: 20,
-            ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              WinnerTitle(),
+              SizedBox(height: 40),
+              WinnerCard(),
+              SizedBox(height: 60),
+              WinnerPlayAgainButton(),
+            ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildTitle() {
+class WinnerTitle extends StatelessWidget {
+  const WinnerTitle({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     return ShaderMask(
       shaderCallback: (bounds) => const LinearGradient(
         colors: [AppColor.primaryGold, AppColor.secondaryGold],
@@ -127,38 +174,38 @@ class WinnerView extends StatelessWidget {
           fontWeight: FontWeight.w900,
           color: AppColor.pureWhite,
           letterSpacing: 2,
-          shadows: [
-            Shadow(
-              color: AppColor.shadowBlack45,
-              blurRadius: 5,
-              offset: Offset(2, 2),
-            ),
-          ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildWinnerCard() {
+class WinnerCard extends StatelessWidget {
+  const WinnerCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<WinnerController>();
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
       decoration: BoxDecoration(
-        color: AppColor.pureWhite.withOpacity(0.1),
+        color: AppColor.pureWhite.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColor.primaryGold.withOpacity(0.5),
+          color: AppColor.primaryGold.withValues(alpha: 0.5),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColor.primaryGold.withOpacity(0.3),
+            color: AppColor.primaryGold.withValues(alpha: 0.3),
             blurRadius: 30,
             spreadRadius: 2,
           ),
         ],
       ),
       child: Text(
-        winnerName,
+        controller.winnerName,
         textAlign: TextAlign.center,
         style: const TextStyle(
           fontSize: 25,
@@ -170,12 +217,19 @@ class WinnerView extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildPlayAgainButton() {
+class WinnerPlayAgainButton extends StatelessWidget {
+  const WinnerPlayAgainButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<WinnerController>();
+
     return GestureDetector(
-      onTap: () => Get.back(),
+      onTap: controller.playAgain,
       child: Container(
-        width: 220,
+        width: double.infinity,
         height: 50,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -186,7 +240,7 @@ class WinnerView extends StatelessWidget {
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: AppColor.primaryGold.withOpacity(0.5),
+              color: AppColor.primaryGold.withValues(alpha: 0.5),
               blurRadius: 10,
               spreadRadius: 1,
               offset: const Offset(0, 2),
@@ -197,7 +251,7 @@ class WinnerView extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(30),
             border: Border.all(
-              color: AppColor.pureWhite.withOpacity(0.3),
+              color: AppColor.pureWhite.withValues(alpha: 0.3),
               width: 2,
             ),
           ),
@@ -223,7 +277,7 @@ class WinnerView extends StatelessWidget {
   }
 }
 
-class _StarsPainter extends CustomPainter {
+class WinnerStarsPainter extends CustomPainter {
   static const int _starCount = 50;
   static const int _randomSeed = 42;
 
@@ -241,7 +295,7 @@ class _StarsPainter extends CustomPainter {
       final radius = random.nextDouble() * 2 + 1;
       final opacity = random.nextDouble() * 0.5 + 0.3;
 
-      paint.color = AppColor.pureWhite.withOpacity(opacity);
+      paint.color = AppColor.pureWhite.withValues(alpha: opacity);
       canvas.drawCircle(Offset(x, y), radius, paint);
     }
   }
