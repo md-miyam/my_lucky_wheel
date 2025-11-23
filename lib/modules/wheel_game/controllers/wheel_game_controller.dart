@@ -6,15 +6,19 @@ import '../../winner/bindings/winner_bindings.dart';
 import '../../winner/view/winner_view.dart';
 
 class WheelGameController extends GetxController with GetTickerProviderStateMixin {
-  // Participant names - can be updated from arguments
+  // Restaurant name from arguments
+  final RxString restaurantName = ''.obs;
+
+  // Participant names list - can be populated from arguments or use default
   final RxList<String> participantNames = <String>[
     'James Smith',
     'Liam Williams',
     'Emma Brown',
     'Noah Jones',
     'Ava Garcia',
-    'Emma Brown',
-    'Noah Jones',
+    'Olivia Martinez',
+    'Olivia Martinez',
+    'Olivia Martinez',
   ].obs;
 
   // State variables
@@ -31,17 +35,26 @@ class WheelGameController extends GetxController with GetTickerProviderStateMixi
   @override
   void onInit() {
     super.onInit();
-    _loadParticipants();
+    _loadData();
     _initializeAnimations();
   }
 
-  void _loadParticipants() {
-    // Get participants from navigation arguments
+  void _loadData() {
+    // Get data from navigation arguments
     final arguments = Get.arguments as Map<String, dynamic>?;
-    if (arguments != null && arguments.containsKey('participants')) {
-      final List<String> customParticipants = arguments['participants'] as List<String>;
-      if (customParticipants.isNotEmpty) {
-        participantNames.value = customParticipants;
+
+    if (arguments != null) {
+      // Load restaurant name
+      if (arguments.containsKey('restaurant')) {
+        restaurantName.value = arguments['restaurant'] as String;
+      }
+
+      // Load participants if provided
+      if (arguments.containsKey('participants')) {
+        final List<String> customParticipants = arguments['participants'] as List<String>;
+        if (customParticipants.isNotEmpty) {
+          participantNames.value = customParticipants;
+        }
       }
     }
   }

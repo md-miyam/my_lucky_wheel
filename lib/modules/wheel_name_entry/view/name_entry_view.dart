@@ -35,7 +35,7 @@ class NameEntryAppBar extends StatelessWidget implements PreferredSizeWidget {
           return FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              "🎯 ADD PARTICIPANTS",
+              "🍽️ ADD RESTAURANT",
               style: TextStyle(
                 fontSize: fontSize,
                 fontWeight: FontWeight.bold,
@@ -49,10 +49,7 @@ class NameEntryAppBar extends StatelessWidget implements PreferredSizeWidget {
         },
       ),
       centerTitle: true,
-      actions: const [
-        NameEntryClearButton(),
-        SizedBox(width: 4),
-      ],
+      actions: const [NameEntryClearButton(), SizedBox(width: 4)],
     );
   }
 }
@@ -95,7 +92,7 @@ class NameEntryClearButton extends StatelessWidget {
     final controller = Get.find<WheelNameEntryController>();
 
     return Obx(
-          () => controller.participantNames.isEmpty
+          () => controller.restaurantName.isEmpty
           ? const SizedBox.shrink()
           : IconButton(
         onPressed: controller.clearAll,
@@ -127,6 +124,9 @@ class NameEntryBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isKeyboardOpen = bottomInset > 0;
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -142,19 +142,37 @@ class NameEntryBody extends StatelessWidget {
       child: Stack(
         children: [
           const NameEntryAnimatedBackground(),
-          Positioned.fill(
-            child: CustomPaint(painter: NameEntryStarsPainter()),
-          ),
+          Positioned.fill(child: CustomPaint(painter: NameEntryStarsPainter())),
           SafeArea(
-            child: Column(
-              children: const [
-                SizedBox(height: 12),
-                Flexible(child: NameEntryInputSection()),
-                SizedBox(height: 12),
-                Expanded(child: NameEntryParticipantsList()),
-                NameEntryStartButton(),
-                SizedBox(height: 24),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 12),
+                          const NameEntryInputSection(),
+                          SizedBox(height: isKeyboardOpen ? 12 : 24),
+                          // Hide or shrink the display card when keyboard is open
+                          if (!isKeyboardOpen)
+                            const Expanded(child: RestaurantDisplayCard())
+                          else
+                            const SizedBox(height: 12),
+                          if (!isKeyboardOpen) ...[
+                            const NameEntryStartButton(),
+                            const SizedBox(height: 24),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -201,301 +219,335 @@ class NameEntryInputSection extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth < 360 ? 12.0 : 16.0;
 
-    return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColor.pureWhite.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: AppColor.primaryGold.withValues(alpha: 0.3),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColor.primaryGold.withValues(alpha: 0.1),
-                blurRadius: 20,
-                spreadRadius: 2,
-              ),
-            ],
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColor.pureWhite.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppColor.primaryGold.withValues(alpha: 0.3),
+            width: 1,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  "Enter Participant Name",
-                  style: TextStyle(
-                    color: AppColor.secondaryGold,
-                    fontSize: screenWidth < 360 ? 13 : 15,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.4,
-                  ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColor.primaryGold.withValues(alpha: 0.1),
+              blurRadius: 20,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                "Enter Restaurant Name",
+                style: TextStyle(
+                  color: AppColor.secondaryGold,
+                  fontSize: screenWidth < 360 ? 13 : 15,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.4,
                 ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: controller.nameController,
-                      style: TextStyle(
-                        color: AppColor.pureWhite,
-                        fontSize: screenWidth < 360 ? 13 : 15,
-                      ),
-                      maxLines: 1,
-                      decoration: InputDecoration(
-                        hintText: "Add Name",
-                        hintStyle: TextStyle(
-                          color: AppColor.pureWhite.withValues(alpha: 0.4),
-                          fontSize: screenWidth < 360 ? 12 : 13,
-                        ),
-                        filled: true,
-                        fillColor: AppColor.pureWhite.withValues(alpha: 0.05),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide(
-                            color: AppColor.primaryGold.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide(
-                            color: AppColor.primaryGold.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: const BorderSide(
-                            color: AppColor.primaryGold,
-                            width: 2,
-                          ),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: screenWidth < 360 ? 14 : 16,
-                          vertical: 14,
-                        ),
-                        isDense: true,
-                      ),
-                      onSubmitted: (_) => controller.addParticipant(),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: controller.addParticipant,
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColor.primaryGold, AppColor.secondaryGold],
-                        ),
-                        borderRadius: BorderRadius.circular(15),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColor.primaryGold.withValues(alpha: 0.4),
-                            blurRadius: 10,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.add_rounded,
-                        color: AppColor.pureWhite,
-                        size: screenWidth < 360 ? 22 : 26,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Obx(
-                    () => FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Participants: ${controller.participantNames.length} (Min: 2)",
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller.nameController,
                     style: TextStyle(
-                      color: controller.canStartGame.value
-                          ? AppColor.primaryGold
-                          : AppColor.primaryPink,
-                      fontSize: screenWidth < 360 ? 11 : 13,
-                      fontWeight: FontWeight.w600,
+                      color: AppColor.pureWhite,
+                      fontSize: screenWidth < 360 ? 13 : 15,
                     ),
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    decoration: InputDecoration(
+                      hintText: "Restaurant Name",
+                      hintStyle: TextStyle(
+                        color: AppColor.pureWhite.withValues(alpha: 0.4),
+                        fontSize: screenWidth < 360 ? 12 : 13,
+                      ),
+                      filled: true,
+                      fillColor: AppColor.pureWhite.withValues(alpha: 0.05),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide(
+                          color: AppColor.primaryGold.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide(
+                          color: AppColor.primaryGold.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                          color: AppColor.primaryGold,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: screenWidth < 360 ? 14 : 16,
+                        vertical: 14,
+                      ),
+                      isDense: true,
+                    ),
+                    onSubmitted: (_) => controller.addRestaurant(),
                   ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: controller.addRestaurant,
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColor.primaryGold, AppColor.secondaryGold],
+                      ),
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColor.primaryGold.withValues(alpha: 0.4),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.done,
+                      color: AppColor.pureWhite,
+                      size: screenWidth < 360 ? 22 : 26,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class NameEntryParticipantsList extends StatelessWidget {
-  const NameEntryParticipantsList({super.key});
+class RestaurantDisplayCard extends StatelessWidget {
+  const RestaurantDisplayCard({super.key});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<WheelNameEntryController>();
     final screenWidth = MediaQuery.of(context).size.width;
-    final horizontalPadding = screenWidth < 360 ? 12.0 : 16.0;
 
     return Obx(
-          () => controller.participantNames.isEmpty
-          ? const NameEntryEmptyState()
-          : Padding(
-        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-        child: ListView.builder(
-          physics: const BouncingScrollPhysics(),
-          itemCount: controller.participantNames.length,
-          padding: const EdgeInsets.only(bottom: 4, top: 4),
-          itemBuilder: (context, index) {
-            return NameEntryParticipantCard(
-              name: controller.participantNames[index],
-              index: index,
-            );
-          },
+          () => controller.restaurantName.isEmpty
+          ? const RestaurantEmptyState()
+          : Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColor.primaryGold.withValues(alpha: 0.15),
+                  AppColor.primaryPink.withValues(alpha: 0.15),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: AppColor.primaryGold.withValues(alpha: 0.5),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColor.primaryGold.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        AppColor.primaryGold,
+                        AppColor.primaryPink,
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColor.primaryGold.withValues(
+                          alpha: 0.4,
+                        ),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.restaurant,
+                    color: AppColor.pureWhite,
+                    size: screenWidth < 360 ? 40 : 50,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "Selected Restaurant",
+                  style: TextStyle(
+                    color: AppColor.secondaryGold,
+                    fontSize: screenWidth < 360 ? 12 : 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  controller.restaurantName.value,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColor.pureWhite,
+                    fontSize: screenWidth < 360 ? 20 : 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                IconButton(
+                  onPressed: controller.removeRestaurant,
+                  icon: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColor.primaryPink.withValues(
+                        alpha: 0.2,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColor.primaryPink.withValues(
+                          alpha: 0.5,
+                        ),
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.delete_outline_rounded,
+                      color: AppColor.primaryPink,
+                      size: screenWidth < 360 ? 20 : 24,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-class NameEntryEmptyState extends StatelessWidget {
-  const NameEntryEmptyState({super.key});
+class RestaurantEmptyState extends StatelessWidget {
+  const RestaurantEmptyState({super.key});
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Center(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColor.primaryGold.withValues(alpha: 0.08),
+                AppColor.primaryPink.withValues(alpha: 0.08),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: AppColor.primaryGold.withValues(alpha: 0.2),
+              width: 1.5,
+            ),
+          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.people_outline_rounded,
-                size: screenWidth < 360 ? 60 : 70,
-                color: AppColor.pureWhite.withValues(alpha: 0.3),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColor.primaryGold.withValues(alpha: 0.15),
+                      AppColor.primaryPink.withValues(alpha: 0.15),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColor.primaryGold.withValues(alpha: 0.3),
+                    width: 2,
+                  ),
+                ),
+                child: Icon(
+                  Icons.restaurant_menu_rounded,
+                  size: screenWidth < 360 ? 50 : 60,
+                  color: AppColor.primaryGold.withValues(alpha: 0.7),
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               Text(
-                "No participants yet",
+                "No restaurant added yet",
                 style: TextStyle(
-                  color: AppColor.pureWhite.withValues(alpha: 0.6),
-                  fontSize: screenWidth < 360 ? 15 : 17,
-                  fontWeight: FontWeight.w600,
+                  color: AppColor.secondaryGold,
+                  fontSize: screenWidth < 360 ? 16 : 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 8),
-              Text(
-                "Add at least 2 participants to start",
-                style: TextStyle(
-                  color: AppColor.pureWhite.withValues(alpha: 0.4),
-                  fontSize: screenWidth < 360 ? 12 : 13,
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                decoration: BoxDecoration(
+                  color: AppColor.primaryPink.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColor.primaryPink.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  "Add a restaurant to continue",
+                  style: TextStyle(
+                    color: AppColor.primaryPink.withValues(alpha: 0.9),
+                    fontSize: screenWidth < 360 ? 13 : 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class NameEntryParticipantCard extends StatelessWidget {
-  final String name;
-  final int index;
-
-  const NameEntryParticipantCard({
-    super.key,
-    required this.name,
-    required this.index,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = Get.find<WheelNameEntryController>();
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColor.pureWhite.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: AppColor.primaryGold.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: screenWidth < 360 ? 32 : 36,
-            height: screenWidth < 360 ? 32 : 36,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColor.primaryGold, AppColor.primaryPink],
-              ),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Text(
-                "${index + 1}",
-                style: TextStyle(
-                  color: AppColor.pureWhite,
-                  fontSize: screenWidth < 360 ? 14 : 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              name,
-              style: TextStyle(
-                color: AppColor.pureWhite,
-                fontSize: screenWidth < 360 ? 13 : 15,
-                fontWeight: FontWeight.w600,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ),
-          const SizedBox(width: 4),
-          IconButton(
-            onPressed: () => controller.removeParticipant(index),
-            padding: const EdgeInsets.all(4),
-            constraints: const BoxConstraints(
-              minWidth: 32,
-              minHeight: 32,
-            ),
-            icon: Icon(
-              Icons.close_rounded,
-              color: AppColor.primaryPink.withValues(alpha: 0.8),
-              size: screenWidth < 360 ? 18 : 22,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -507,7 +559,6 @@ class NameEntryStartButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<WheelNameEntryController>();
-    final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -559,7 +610,7 @@ class NameEntryStartButton extends StatelessWidget {
                       child: Text(
                         controller.canStartGame.value
                             ? "START GAME"
-                            : "ADD MORE PARTICIPANTS",
+                            : "ADD RESTAURANT FIRST",
                         style: const TextStyle(
                           color: AppColor.pureWhite,
                           fontSize: 18,
